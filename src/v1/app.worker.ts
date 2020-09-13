@@ -16,10 +16,11 @@ function workerCall(request: IWorkerMessage) {
         msgHandlers[request.msgId] = response => {
             if (response.error) {
                 console.log("error", response.error);
-                reject(response.error);
+                if (response.result == null) { // intentionally !=, matches `undefined` or `null`
+                    reject(response.error);
+                }
             }
-            else
-                resolve(response.result);
+            resolve(response);
 
             //console.info(`[performance] [${(new Date()).format("H:i:s.u")}] Got worker response: ${Date.now()}.`);
         };
@@ -35,9 +36,9 @@ export var workerMethods = {
         return <Promise<void>>workerCall({ type: "setInput", args: [inputBuffer] });
     },
     reparse: (eagerMode: boolean) => {
-        return <Promise<IExportedValue>>workerCall({ type: "reparse", args: [eagerMode] });
+        return <Promise<IWorkerMessage>>workerCall({ type: "reparse", args: [eagerMode] });
     },
     get: (path: string[]) => {
-        return <Promise<IExportedValue>>workerCall({ type: "get", args: [path] });
+        return <Promise<IWorkerMessage>>workerCall({ type: "get", args: [path] });
     }
 };

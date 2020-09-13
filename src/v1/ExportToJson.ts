@@ -44,7 +44,7 @@ export function exportToJson(useHex: boolean = false) {
         }
     }
 
-    return workerMethods.reparse(true).then(exportedRoot => {
+    return workerMethods.reparse(true).then(({result: exportedRoot}) => {
         console.log("exported", exportedRoot);
         expToNative(exportedRoot);
         return result;

@@ -8,6 +8,7 @@ var wi = {
     ioInput: <KaitaiStream>null,
     root: <any>null,
     exported: <IExportedValue>null,
+    error: <Error>null,
 };
 
 var hooks = { nodeFilter: <(obj: any) => any> null };
@@ -121,7 +122,11 @@ var apiMethods = {
         //var start = performance.now();
         wi.ioInput = new KaitaiStream(wi.inputBuffer, 0);
         wi.root = new wi.MainClass(wi.ioInput);
-        wi.root._read();
+        try {
+            wi.root._read();
+        } catch (e) {
+            wi.error = e;
+        }
         if (hooks.nodeFilter)
             wi.root = hooks.nodeFilter(wi.root);
         wi.exported = exportValue(wi.root, <IDebugInfo>{ start: 0, end: wi.inputBuffer.byteLength }, [], eagerMode);
@@ -146,6 +151,11 @@ myself.onmessage = (ev: MessageEvent) => {
     if (apiMethods.hasOwnProperty(msg.type)) {
         try {
             msg.result = apiMethods[msg.type].apply(self, msg.args);
+            if (wi.error != null) { // intentionally !=, matches all but `null` and `undefined`
+                const e = wi.error;
+                wi.error = null;
+                throw e;
+            }
         } catch (error) {
             console.log("[Worker] Error", error);
             msg.error = error.toString();
